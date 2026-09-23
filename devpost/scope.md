@@ -33,7 +33,6 @@ A smart team member reporting to the owner, not a raw analytics dashboard: plain
 He is a practising dentist with his own clinic. He has seen ad conversations fail to become patients. He wants something working "all the time to improve any stage that is wasting" patients, "كأني معين تيم كامل من الميديا باينج".
 
 ## What "Working" Looks Like
-*(Proposed from the conversation, for the learner to confirm or change.)*
 In the demo:
 - The agent runs its daily cycle on a realistic practice page: ads, chats, comments and reactions.
 - The owner sees the funnel with the biggest leak marked. For example, "most people ask the price and never get a booking".
