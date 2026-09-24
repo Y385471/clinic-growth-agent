@@ -51,7 +51,7 @@ export async function GET(request) {
       latestRun: runs[0].day === run.day ? null : { day: runs[0].day, status: runs[0].status, error: runs[0].error },
       alerts: await liveAlerts(runs),
       stages, leak: f.leak, hypotheses, lost, drops, previousDay: previous?.day ?? null,
-      days: runs.map(r => ({ day: r.day, status: r.status })),
+      days: runs.filter(r => r.status !== 'failed').map(r => ({ day: r.day, status: r.status })),
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });

@@ -27,8 +27,10 @@ create table if not exists cga_hypotheses (
   id text primary key, stage text not null, statement text not null,
   metric text not null, threshold numeric not null, direction text not null default 'below',
   status text not null default 'testing' check (status in ('testing','confirmed','rejected')),
-  evidence jsonb default '[]'::jsonb, created_day int not null, updated_day int not null
+  evidence jsonb default '[]'::jsonb, created_day int not null, updated_day int not null,
+  condition jsonb -- optional: only judge the hypothesis on days the fix was actually applied
 );
+alter table cga_hypotheses add column if not exists condition jsonb;
 create table if not exists cga_runs (
   day int primary key, mode text not null, status text not null,
   alert text, error text, summary jsonb, counts jsonb,
