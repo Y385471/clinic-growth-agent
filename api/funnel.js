@@ -34,11 +34,23 @@ export async function GET(request) {
       fix: (s === 'attended' && attended?.fix) || run.summary?.stages?.[s]?.fix || null,
     }));
     const hypotheses = await select('cga_hypotheses', 'order=updated_day.desc,id&limit=20');
+
+    // Who was lost where: every person who dropped out today, at the stage they dropped.
+    const alias = Object.fromEntries(data.people.map(p => [p.id, p.alias]));
+    const booked = new Set(data.bookings.map(b => b.person_id));
+    const lost = [
+      { stage: 'booked', name: 'راسلوا وما حجزوش', people: data.conversations.filter(c => !booked.has(c.person_id))
+          .map(c => ({ id: c.person_id, alias: alias[c.person_id], reason: c.analysis?.loss_reason || 'not_analysed' })) },
+      { stage: 'attended', name: 'حجزوا وما حضروش', people: data.bookings.filter(b => b.attended === false)
+          .map(b => ({ id: b.person_id, alias: alias[b.person_id], reason: 'no_show' })) },
+    ].filter(g => g.people.length);
+    const drops = previous ? STAGES.filter(s => previous.counts?.[s] != null && f.counts[s] < previous.counts[s] && !(s === 'attended' && !f.attendanceComplete))
+      .map(s => ({ stage: s, name: STAGE_NAMES[s], from: previous.counts[s], to: f.counts[s] })) : [];
     return Response.json({
       day: run.day, mode: run.mode, status: run.status, updated: run.finished_at,
       latestRun: runs[0].day === run.day ? null : { day: runs[0].day, status: runs[0].status, error: runs[0].error },
       alerts: await liveAlerts(runs),
-      stages, leak: f.leak, hypotheses,
+      stages, leak: f.leak, hypotheses, lost, drops, previousDay: previous?.day ?? null,
       days: runs.map(r => ({ day: r.day, status: r.status })),
     });
   } catch (e) {

@@ -87,3 +87,5 @@ details.person summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 6
 .reason { font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); }
 .why { margin: 8px 0 4px; }
 pre.chat { white-space: pre-wrap; font: inherit; font-size: 14px; background: var(--bg); padding: 10px; border-radius: 8px; margin: 8px 0 0; }
+.lostgroup { margin-top: 8px; }
+.lostgroup .chips a { font-size: 13px; }

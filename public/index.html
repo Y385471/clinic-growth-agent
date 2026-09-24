@@ -17,6 +17,11 @@
     <div id="banners"></div>
     <div id="headline"></div>
     <div class="funnel" id="funnel"><div class="empty">جاري التحميل…</div></div>
+    <section class="card" id="lost-card" hidden>
+      <h2>مين ضاع فين</h2>
+      <div id="drops"></div>
+      <div id="lost"></div>
+    </section>
     <section class="card" id="learned">
       <h2>اللي اتعلمته</h2>
       <div id="hyps" class="muted">—</div>
@@ -24,7 +29,7 @@
     <footer>بيانات تجريبية لعيادة وهمية في وضع التجربة · الأسماء الحقيقية وأرقام التليفونات لا تُرسل للذكاء الاصطناعي أبداً</footer>
   </div>
   <script type="module">
-    import { $, api, esc, pct, when, dayLabel, STATUS_AR, STATUS_CLASS } from '/app.js';
+    import { $, api, esc, pct, when, dayLabel, REASON_AR, STATUS_AR, STATUS_CLASS } from '/app.js';
 
     const params = new URLSearchParams(location.search);
 
@@ -71,9 +76,16 @@
 
       $('#funnel').innerHTML = data.stages.map((s, i) => stageCard(s, i, data)).join('');
 
+      if (data.lost.length || data.drops.length) {
+        $('#lost-card').hidden = false;
+        $('#drops').innerHTML = data.drops.map(d => `<div class="banner leak">«${esc(d.name)}» نزل من ${d.from} لـ ${d.to} مقارنة بـ${dayLabel(data.previousDay)}. دول الناس اللي ضاعوا:</div>`).join('');
+        $('#lost').innerHTML = data.lost.map(g => `<div class="lostgroup"><b>${esc(g.name)} (${g.people.length})</b>
+          <div class="chips">${g.people.map(p => `<a href="/stage.html?s=${g.stage}&day=${data.day}#${esc(p.id)}">${esc(p.alias)} · ${esc(REASON_AR[p.reason] || p.reason)}</a>`).join('')}</div></div>`).join('');
+      }
+
       $('#hyps').innerHTML = data.hypotheses.length
         ? data.hypotheses.map(h => `<div class="hyp"><span class="pill ${STATUS_CLASS[h.status]}">${STATUS_AR[h.status]}</span> ${esc(h.statement)}
-            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}: ${esc(e.text)}`).join(' · ')}</div>` : ''}</div>`).join('')
+            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}${e.day === h.created_day ? ' (الأساس)' : ''}: ${esc(e.text)}`).join('<br>')}</div>` : ''}</div>`).join('')
         : 'أول يوم: الفرضيات هتتفتح وهتتراجع مع كل يوم جديد. لسه مفيش حاجة اتأكدت.';
     }
 

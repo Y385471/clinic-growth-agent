@@ -90,7 +90,7 @@
 
       $('#hyps').innerHTML = d.hypotheses.length
         ? d.hypotheses.map(h => `<div class="hyp"><span class="pill ${STATUS_CLASS[h.status]}">${STATUS_AR[h.status]}</span> ${esc(h.statement)}
-            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}: ${esc(e.text)}`).join(' · ')}</div>` : ''}</div>`).join('')
+            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}${e.day === h.created_day ? ' (الأساس)' : ''}: ${esc(e.text)}`).join('<br>')}</div>` : ''}</div>`).join('')
         : 'مفيش فرضية مفتوحة للمرحلة دي لسه.';
 
       const lostIds = new Set(d.lost.map(p => p.id));
@@ -98,6 +98,8 @@
       $('#people-title').textContent = d.lost.length ? `الناس (${d.lost.length} ضاعوا في المرحلة دي، ${d.people.length} وصلوا)` : `الناس (${d.people.length})`;
       $('#people').innerHTML = list.length ? list.map(p => personRow(p, lostIds.has(p.id))).join('') : '<p class="muted">مفيش أشخاص في المرحلة دي (أرقام إعلانات بس).</p>';
 
+      const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (target) { target.open = true; target.scrollIntoView({ block: 'center' }); }
       document.querySelectorAll('[data-open]').forEach(a => a.addEventListener('click', () => { const el = document.getElementById(a.dataset.open); if (el) el.open = true; }));
     }
 
