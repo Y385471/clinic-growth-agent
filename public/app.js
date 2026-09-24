@@ -22,7 +22,7 @@ export const dayLabel = d => (d > 1e7 ? `${String(d).slice(6)}/${String(d).slice
 export const REASON_AR = {
   price: 'السعر', slow_reply: 'تأخر رد العيادة', no_clinic_reply: 'العيادة لم ترد', fear: 'الخوف',
   trust: 'عدم الثقة', comparison: 'المقارنة بعيادة أخرى', just_asking: 'مجرد استفسار',
-  moved_to_phone: 'انتقل للتليفون', other: 'سبب آخر', not_analysed: 'لم يُحلَّل بعد',
+  moved_to_phone: 'انتقل للتليفون', other: 'سبب آخر', not_analysed: 'لم يُحلَّل بعد', no_show: 'حجز وما حضرش', not_ticked: 'الحضور لسه ما اتسجلش',
 };
 
 export const STATUS_AR = { testing: 'تحت الاختبار', confirmed: 'اتأكدت', rejected: 'اترفضت' };

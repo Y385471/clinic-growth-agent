@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stage Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><span class="dot"></span> <a href="/" id="home" style="color:inherit">وكيل نمو العيادة</a> <span class="muted">/</span> <span id="title">…</span></div>
+      <nav class="meta" id="nav"></nav>
+    </header>
+    <div class="strip" id="strip"></div>
+    <div id="summary"></div>
+    <div class="grid2">
+      <section class="card" id="reasons-card"><h2 id="reasons-title">ليه ضاعوا</h2><div id="reasons"></div></section>
+      <section class="card"><h2>الإعلانات اللي غذّت المرحلة</h2><div class="tablewrap"><table id="ads"></table></div></section>
+    </div>
+    <section class="card" id="hyp-card"><h2>الفرضية تحت الاختبار</h2><div id="hyps" class="muted"></div></section>
+    <section class="card"><h2 id="people-title">الناس</h2><div id="people"></div></section>
+    <footer>بيانات تجريبية · الأسماء مستبدلة برموز قبل أي تحليل</footer>
+  </div>
+  <script type="module">
+    import { $, api, esc, pct, dayLabel, REASON_AR, STATUS_AR, STATUS_CLASS } from '/app.js';
+
+    const params = new URLSearchParams(location.search);
+    const s = params.get('s') || 'booked';
+    const q = d => `/stage.html?s=${d}${params.get('day') ? `&day=${params.get('day')}` : ''}`;
+
+    function personRow(p, lost) {
+      const status = p.attended === true ? '<span class="pill ok">حضر</span>'
+        : p.attended === false ? '<span class="pill leak">ما حضرش</span>'
+        : p.booked ? '<span class="pill">حجز</span>' : '<span class="pill leak">ما حجزش</span>';
+      const reply = p.conversation?.first_reply_minutes == null ? 'العيادة ما ردتش' : `أول رد بعد ${p.conversation.first_reply_minutes} د`;
+      return `<details class="person ${lost ? 'lost' : ''}" id="${esc(p.id)}">
+        <summary><b>${esc(p.alias)}</b> ${status}
+          <span class="muted">· ${esc(p.ad || 'بدون إعلان')} · ${p.conversation?.source === 'comment' ? 'تعليق' : 'رسالة'} · ${reply}</span>
+          ${p.reason ? `<span class="reason">${esc(REASON_AR[p.reason] || p.reason)}</span>` : ''}</summary>
+        ${p.reason_text ? `<p class="why">${esc(p.reason_text)}</p>` : ''}
+        ${p.booking_date ? `<p class="muted">الميعاد: ${esc(p.booking_date)}</p>` : ''}
+        ${p.conversation ? `<pre class="chat">${esc(p.conversation.text)}</pre>` : ''}
+      </details>`;
+    }
+
+    function render(d) {
+      document.title = `${d.name} · Stage Dashboard`;
+      $('#title').textContent = `مرحلة ${d.name}`;
+      $('#home').href = `/?day=${d.day}`;
+      $('#nav').innerHTML = `${d.prev ? `<a href="${q(d.prev.key)}">→ ${esc(d.prev.name)}</a>` : ''}
+        <span class="pill">${dayLabel(d.day)}</span>
+        ${d.next ? `<a href="${q(d.next.key)}">${esc(d.next.name)} ←</a>` : ''}`;
+
+      const names = { ad: 'الإعلان', message: 'الرسالة', booked: 'الحجز', attended: 'الحضور' };
+      $('#strip').innerHTML = Object.keys(names).map(k =>
+        `<a class="${k === d.stage ? 'on' : ''}" href="${q(k)}">${names[k]} <b>${k === 'attended' && d.incomplete && !d.counts[k] ? '—' : d.counts[k]}</b></a>`).join('<span class="arr">←</span>');
+
+      $('#summary').innerHTML = `<div class="headline" style="border-inline-start-color:${d.isLeak ? 'var(--leak)' : 'var(--accent)'}">
+        <h1>${d.incomplete ? 'الحضور لسه ما اتسجلش' : `${d.count}${d.from != null ? ` من ${d.from} (${pct(d.count, d.from)}%)` : ' ضغطة على زر المراسلة'}`}
+          ${d.isLeak ? '<span class="pill leak">أكبر تسريب</span>' : ''}</h1>
+        ${d.problem ? `<p><b>المشكلة:</b> ${esc(d.problem)}</p>` : ''}
+        ${d.fix ? `<p class="fixline"><b>الحل:</b> ${esc(d.fix)}</p>` : ''}</div>`;
+
+      // Ranked reasons, each with the people behind it and their own words.
+      const max = Math.max(1, ...d.reasons.map(r => r.count));
+      const extraReasons = { no_show: 'حجز وما حضرش', not_ticked: 'الحضور لسه ما اتسجلش' };
+      if (d.reasons.length) {
+        $('#reasons').innerHTML = d.reasons.map(r => `<div class="reasonrow">
+          <div class="rhead"><b>${esc(REASON_AR[r.reason] || extraReasons[r.reason] || r.reason)}</b><span>${r.count}</span></div>
+          <div class="bar"><i style="width:${(r.count / max) * 100}%"></i></div>
+          ${r.quotes.map(qt => `<blockquote>«${esc(qt.text)}»</blockquote>`).join('')}
+          ${r.explanations[0] ? `<p class="muted small">${esc(r.explanations[0])}</p>` : ''}
+          <div class="chips">${r.people.map(id => `<a href="#${esc(id)}" data-open="${esc(id)}">${esc(d.people.concat(d.lost).find(p => p.id === id)?.alias || id)}</a>`).join('')}</div>
+        </div>`).join('') + (d.priceReply ? `<div class="speed">
+          <b>سرعة الرد على سؤال السعر</b>
+          <div>رد خلال ساعة: حجز <b>${d.priceReply.fast_within_60min.booked} من ${d.priceReply.fast_within_60min.n}</b></div>
+          <div>رد بعد أكتر من ساعة أو ما اتردش: حجز <b>${d.priceReply.slow_over_60min.booked} من ${d.priceReply.slow_over_60min.n}</b></div></div>` : '');
+      } else {
+        $('#reasons-title').textContent = d.stage === 'ad' ? 'أداء الإعلانات' : 'الخسارة في المرحلة دي';
+        $('#reasons').innerHTML = `<p class="muted">${d.stage === 'message'
+          ? `${d.from - d.count} ضغطوا زر المراسلة وما بدأوش محادثة، فمفيش كلام نحلله. قارن الإعلانات في الجدول.`
+          : 'المرحلة دي بتبدأ بالإعلان نفسه: قارن التكلفة والضغطات في الجدول.'}</p>`;
+      }
+
+      $('#ads').innerHTML = `<thead><tr><th>الإعلان</th><th>صرف</th><th>ضغطات</th><th>رسائل</th><th>حجوزات</th><th>حضروا</th><th>تكلفة الحجز</th></tr></thead><tbody>` +
+        d.ads.map(a => `<tr><td>${esc(a.name)}</td><td>${a.spend}</td><td>${a.clicks}</td><td>${a.messages}</td><td>${a.booked}</td><td>${a.attended}</td><td>${a.cost_per_booking ?? '—'}</td></tr>`).join('') + '</tbody>';
+
+      $('#hyps').innerHTML = d.hypotheses.length
+        ? d.hypotheses.map(h => `<div class="hyp"><span class="pill ${STATUS_CLASS[h.status]}">${STATUS_AR[h.status]}</span> ${esc(h.statement)}
+            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}: ${esc(e.text)}`).join(' · ')}</div>` : ''}</div>`).join('')
+        : 'مفيش فرضية مفتوحة للمرحلة دي لسه.';
+
+      const lostIds = new Set(d.lost.map(p => p.id));
+      const list = [...d.lost, ...d.people.filter(p => !lostIds.has(p.id))];
+      $('#people-title').textContent = d.lost.length ? `الناس (${d.lost.length} ضاعوا في المرحلة دي، ${d.people.length} وصلوا)` : `الناس (${d.people.length})`;
+      $('#people').innerHTML = list.length ? list.map(p => personRow(p, lostIds.has(p.id))).join('') : '<p class="muted">مفيش أشخاص في المرحلة دي (أرقام إعلانات بس).</p>';
+
+      document.querySelectorAll('[data-open]').forEach(a => a.addEventListener('click', () => { const el = document.getElementById(a.dataset.open); if (el) el.open = true; }));
+    }
+
+    api(`/api/stage?s=${s}${params.get('day') ? `&day=${params.get('day')}` : ''}`)
+      .then(d => d.empty ? ($('#summary').innerHTML = '<div class="empty">لسه مفيش تشغيل.</div>') : render(d))
+      .catch(e => { $('#summary').innerHTML = `<div class="empty">تعذر تحميل البيانات: ${esc(e.message)}</div>`; });
+  </script>
+</body>
+</html>
