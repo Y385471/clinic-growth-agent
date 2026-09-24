@@ -1,11 +1,11 @@
 ---
 doc: checklist
-status: draft
+status: approved
 ---
 
 # Build Checklist
 
-Build mode: [learn or fast — record once chosen; carry forward on resume]
+Build mode: fast. The learner approved going ahead and asked the build to continue without stopping ("عايزك تكمل شغل متوقفش") before going to sleep. Hands-on checks happen when he is back.
 
 ## Slices
 
@@ -108,3 +108,4 @@ Reflection:
 Activity mode:
 
 ## Revisions
+- The early hands-on checkpoint after slice 1 moves to when the learner is back. He asked the build to continue overnight, so slices 2–5 are built in the meantime and his early feedback is folded into the final kick-the-tires review. No learner check is marked done without him.
