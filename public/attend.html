@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+  <style>
+    .wrap { max-width: 520px; }
+    .row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+    .row .who { flex: 1; }
+    .row .who b { display: block; font-size: 17px; }
+    .row .who span { font-size: 13px; color: var(--muted); }
+    .tap { min-width: 96px; min-height: 48px; border-radius: 12px; border: 2px solid var(--accent); background: var(--surface); color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
+    .tap.on { background: var(--accent); color: #fff; }
+    .no { min-height: 48px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+    .no.on { color: var(--leak); font-weight: 700; text-decoration: none; }
+    .count { font-size: 15px; margin: 0 0 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top"><div class="brand"><span class="dot"></span> الحضور</div><span class="pill" id="day"></span></header>
+    <p class="count" id="count"></p>
+    <div id="list"><div class="empty">جاري التحميل…</div></div>
+    <footer>اضغطي «حضر» لكل حد جه. «ما حضرش» لو الميعاد عدى وما جاش.</footer>
+  </div>
+  <script type="module">
+    import { $, api, esc, dayLabel } from '/app.js';
+    const params = new URLSearchParams(location.search);
+    const k = params.get('k') ? `?k=${encodeURIComponent(params.get('k'))}` : '';
+    const dayQ = params.get('day') ? `${k ? '&' : '?'}day=${params.get('day')}` : '';
+    let bookings = [];
+
+    function render() {
+      const done = bookings.filter(b => b.attended !== null).length;
+      const came = bookings.filter(b => b.attended === true).length;
+      $('#count').innerHTML = bookings.length ? `حضر <b>${came}</b> · اتسجل ${done} من ${bookings.length} حجز` : '';
+      $('#list').innerHTML = bookings.length ? bookings.map(b => `<div class="row">
+          <div class="who"><b>${esc(b.name)}</b><span>${esc(b.booking_date || '')}</span></div>
+          <button class="no ${b.attended === false ? 'on' : ''}" data-id="${esc(b.id)}" data-v="false">ما حضرش</button>
+          <button class="tap ${b.attended === true ? 'on' : ''}" data-id="${esc(b.id)}" data-v="true">${b.attended === true ? '✓ حضر' : 'حضر'}</button>
+        </div>`).join('') : '<div class="empty">مفيش حجوزات النهارده.</div>';
+    }
+
+    $('#list').addEventListener('click', async e => {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
+      const b = bookings.find(x => x.id === btn.dataset.id);
+      const want = btn.dataset.v === 'true';
+      const value = b.attended === want ? null : want; // tapping again undoes
+      const before = b.attended;
+      b.attended = value; render();
+      try {
+        await api(`/api/attendance${k}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ booking_id: b.id, attended: value }) });
+      } catch (err) { b.attended = before; render(); alert(`ما اتسجلش: ${err.message}`); }
+    });
+
+    api(`/api/attendance${k}${dayQ}`).then(d => {
+      $('#day').textContent = d.day ? dayLabel(d.day) : '';
+      bookings = d.bookings; render();
+    }).catch(e => { $('#list').innerHTML = `<div class="empty">${esc(e.message === 'staff key required' ? 'الرابط ناقص مفتاح الاستقبال.' : e.message)}</div>`; });
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 // Full dashboard data for one stage: which ads fed it, the people in it, who was lost on the way in
 // and why (ranked, with quotes), the fix, and the hypothesis being tested. Everything is joined by id.
 import { select } from '../lib/db.js';
-import { loadDay, computeFunnel, lossReasons, priceReplyStats, STAGES, STAGE_NAMES } from '../lib/funnel.js';
+import { loadDay, computeFunnel, lossReasons, priceReplyStats, freshAttendedLine, STAGES, STAGE_NAMES } from '../lib/funnel.js';
 
 export async function GET(request) {
   const url = new URL(request.url);
@@ -76,7 +76,8 @@ export async function GET(request) {
       counts: f.counts, count: f.counts[s], from: i ? f.counts[STAGES[i - 1]] : null,
       incomplete: s === 'attended' && !f.attendanceComplete,
       isLeak: f.leak?.to === s,
-      problem: run.summary?.stages?.[s]?.problem || null, fix: run.summary?.stages?.[s]?.fix || null,
+      problem: (s === 'attended' && freshAttendedLine(f, run.summary)?.problem) || run.summary?.stages?.[s]?.problem || null,
+      fix: (s === 'attended' && freshAttendedLine(f, run.summary)?.fix) || run.summary?.stages?.[s]?.fix || null,
       ads, people: inStage, lost, reasons,
       priceReply: s === 'booked' ? priceReplyStats(data.conversations, bookedIds) : null,
       hypotheses,
