@@ -1,5 +1,6 @@
 // Owner home data: the day's funnel, the biggest leak, problem/fix per stage, alerts and history.
 import { select } from '../lib/db.js';
+import { asOf } from '../lib/learn.js';
 import { loadDay, computeFunnel, freshAttendedLine, STAGES, STAGE_NAMES } from '../lib/funnel.js';
 
 // An alert stays only while the day it points at still has unticked bookings.
@@ -33,7 +34,7 @@ export async function GET(request) {
       problem: (s === 'attended' && attended?.problem) || run.summary?.stages?.[s]?.problem || null,
       fix: (s === 'attended' && attended?.fix) || run.summary?.stages?.[s]?.fix || null,
     }));
-    const hypotheses = await select('cga_hypotheses', 'order=updated_day.desc,id&limit=20');
+    const hypotheses = asOf(await select('cga_hypotheses', 'order=updated_day.desc,id&limit=20'), run.day);
 
     // Who was lost where: every person who dropped out today, at the stage they dropped.
     const alias = Object.fromEntries(data.people.map(p => [p.id, p.alias]));

@@ -1,6 +1,7 @@
 // Full dashboard data for one stage: which ads fed it, the people in it, who was lost on the way in
 // and why (ranked, with quotes), the fix, and the hypothesis being tested. Everything is joined by id.
 import { select } from '../lib/db.js';
+import { asOf } from '../lib/learn.js';
 import { loadDay, computeFunnel, lossReasons, priceReplyStats, freshAttendedLine, STAGES, STAGE_NAMES } from '../lib/funnel.js';
 
 export async function GET(request) {
@@ -68,7 +69,7 @@ export async function GET(request) {
     });
 
     const i = STAGES.indexOf(s);
-    const hypotheses = await select('cga_hypotheses', `stage=eq.${s}&order=updated_day.desc`);
+    const hypotheses = asOf(await select('cga_hypotheses', `stage=eq.${s}&order=updated_day.desc`), day);
     return Response.json({
       day, stage: s, name: STAGE_NAMES[s],
       prev: i > 0 ? { key: STAGES[i - 1], name: STAGE_NAMES[STAGES[i - 1]] } : null,
