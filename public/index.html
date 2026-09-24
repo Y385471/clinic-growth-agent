@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clinic Growth Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><span class="dot"></span> وكيل نمو العيادة</div>
+      <div class="meta" id="meta"></div>
+    </header>
+    <div id="banners"></div>
+    <div id="headline"></div>
+    <div class="funnel" id="funnel"><div class="empty">جاري التحميل…</div></div>
+    <section class="card" id="learned">
+      <h2>اللي اتعلمته</h2>
+      <div id="hyps" class="muted">—</div>
+    </section>
+    <footer>بيانات تجريبية لعيادة وهمية في وضع التجربة · الأسماء الحقيقية وأرقام التليفونات لا تُرسل للذكاء الاصطناعي أبداً</footer>
+  </div>
+  <script type="module">
+    import { $, api, esc, pct, when, dayLabel, STATUS_AR, STATUS_CLASS } from '/app.js';
+
+    const params = new URLSearchParams(location.search);
+
+    function stageCard(s, i, data) {
+      const isLeak = data.leak && data.leak.to === s.key;
+      const rate = i === 0 ? '<span>ضغطات على زر المراسلة</span>'
+        : `<b>${pct(s.count, s.fromPrevStage)}%</b> من المرحلة اللي قبلها`;
+      const delta = s.previous == null ? '' : s.count > s.previous ? `<span class="delta up">▲ ${s.count - s.previous}</span>`
+        : s.count < s.previous ? `<span class="delta down">▼ ${s.previous - s.count}</span>` : '';
+      return `<a class="stage ${isLeak ? 'is-leak' : ''}" href="/stage.html?s=${s.key}&day=${data.day}">
+        <div class="name"><span>${i + 1}. ${esc(s.name)}</span>
+          ${isLeak ? '<span class="pill leak">أكبر تسريب</span>' : s.incomplete ? '<span class="pill warn">غير مكتمل</span>' : ''}</div>
+        <div class="count">${s.incomplete && s.count === 0 ? '—' : s.count} ${delta}</div>
+        <div class="rate">${s.incomplete ? 'الاستقبال لسه ما سجلش الحضور' : rate}</div>
+        ${s.problem ? `<div class="line"><span class="lbl">المشكلة</span>${esc(s.problem)}</div>` : ''}
+        ${s.fix ? `<div class="line fix"><span class="lbl">الحل</span>${esc(s.fix)}</div>` : ''}
+        <span class="more">افتح تحليل المرحلة ←</span>
+      </a>`;
+    }
+
+    function render(data) {
+      if (data.empty) {
+        $('#funnel').innerHTML = '<div class="empty">لسه مفيش تشغيل. أول تشغيل يومي هيملأ الصفحة.</div>';
+        return;
+      }
+      const days = data.days.map(d => `<option value="${d.day}" ${d.day === data.day ? 'selected' : ''}>${dayLabel(d.day)}</option>`).join('');
+      $('#meta').innerHTML = `<span class="pill ${data.mode === 'live' ? 'ok' : ''}">${data.mode === 'live' ? 'الصفحة الحقيقية' : 'وضع التجربة'}</span>
+        <span>آخر تحديث: ${when(data.updated)}</span>
+        <select id="day" aria-label="اليوم">${days}</select>`;
+      $('#day').onchange = e => { params.set('day', e.target.value); location.search = params; };
+
+      const banners = [];
+      if (data.latestRun && data.latestRun.status === 'failed')
+        banners.push(`<div class="banner leak">تشغيل ${dayLabel(data.latestRun.day)} فشل (${esc(data.latestRun.error || 'خطأ غير معروف')}). المعروض هو آخر بيانات سليمة.</div>`);
+      if (data.status === 'partial')
+        banners.push('<div class="banner warn">بعض المحادثات لسه ما اتحللتش (حد الذكاء الاصطناعي المجاني). هتتحلل في التشغيل الجاي، والأرقام سليمة.</div>');
+      for (const a of data.alerts) banners.push(`<div class="banner warn">⚠ ${esc(a.text)}</div>`);
+      $('#banners').innerHTML = banners.join('');
+
+      const leakStage = data.leak && data.stages.find(s => s.key === data.leak.to);
+      $('#headline').innerHTML = leakStage ? `<div class="headline">
+        <h1>بنخسر ${Math.round(data.leak.lostShare * 100)}% من الناس بين «${esc(data.stages.find(s => s.key === data.leak.from).name)}» و«${esc(leakStage.name)}»</h1>
+        <p>${esc(leakStage.problem || '')}</p></div>` : '';
+
+      $('#funnel').innerHTML = data.stages.map((s, i) => stageCard(s, i, data)).join('');
+
+      $('#hyps').innerHTML = data.hypotheses.length
+        ? data.hypotheses.map(h => `<div class="hyp"><span class="pill ${STATUS_CLASS[h.status]}">${STATUS_AR[h.status]}</span> ${esc(h.statement)}
+            ${h.evidence?.length ? `<div class="ev">${h.evidence.map(e => `${dayLabel(e.day)}: ${esc(e.text)}`).join(' · ')}</div>` : ''}</div>`).join('')
+        : 'أول يوم: الفرضيات هتتفتح وهتتراجع مع كل يوم جديد. لسه مفيش حاجة اتأكدت.';
+    }
+
+    api(`/api/funnel${params.get('day') ? `?day=${params.get('day')}` : ''}`)
+      .then(render)
+      .catch(e => { $('#funnel').innerHTML = `<div class="empty">تعذر تحميل البيانات: ${esc(e.message)}</div>`; });
+  </script>
+</body>
+</html>

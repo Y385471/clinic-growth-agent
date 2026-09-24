@@ -1,0 +1,7 @@
+{
+  "name": "clinic-growth-agent",
+  "private": true,
+  "type": "module",
+  "description": "An AI growth agent for a clinic: follows every ad conversation to a booked and attended patient, finds the leaking stage and learns.",
+  "engines": { "node": ">=20" }
+}

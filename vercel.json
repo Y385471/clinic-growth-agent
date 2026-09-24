@@ -1,0 +1,4 @@
+{
+  "functions": { "api/run-daily.js": { "maxDuration": 60 } },
+  "crons": [{ "path": "/api/run-daily", "schedule": "0 6 * * *" }]
+}

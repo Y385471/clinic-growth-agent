@@ -1,0 +1,59 @@
+:root {
+  --bg: #f6f8fa; --surface: #ffffff; --line: #e4e9ee; --ink: #16202a; --muted: #5d6b78;
+  --accent: #0f8b8d; --accent-soft: #e3f4f4; --leak: #d64545; --leak-soft: #fdeceb;
+  --warn: #b7791f; --warn-soft: #fdf5e6; --ok: #2f855a; --ok-soft: #e8f5ee;
+  --radius: 14px; --shadow: 0 1px 2px rgba(22, 32, 42, .05), 0 4px 16px rgba(22, 32, 42, .04);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; }
+.brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.meta { color: var(--muted); font-size: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; background: var(--accent-soft); color: var(--accent); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.leak { background: var(--leak-soft); color: var(--leak); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+select { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); }
+
+.banner { border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; font-size: 15px; }
+.banner.warn { background: var(--warn-soft); color: #7a4f10; border: 1px solid #f3dfb8; }
+.banner.leak { background: var(--leak-soft); color: #8e2626; border: 1px solid #f6caca; }
+
+.headline { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 18px; border-inline-start: 5px solid var(--leak); }
+.headline h1 { margin: 0 0 4px; font-size: 20px; }
+.headline p { margin: 0; color: var(--muted); }
+
+.funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 820px) { .funnel { grid-template-columns: 1fr; } }
+.stage {
+  position: relative; display: block; color: inherit; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; transition: transform .12s, box-shadow .12s;
+}
+.stage:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(22, 32, 42, .08); }
+.stage.is-leak { border: 2px solid var(--leak); background: linear-gradient(var(--leak-soft), var(--surface) 55%); }
+.stage .name { font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.stage .count { font-size: 40px; font-weight: 700; line-height: 1.1; margin: 6px 0 2px; font-family: 'Inter', sans-serif; }
+.stage .rate { font-size: 13px; color: var(--muted); min-height: 20px; }
+.stage .rate b { color: var(--ink); }
+.stage.is-leak .rate b { color: var(--leak); }
+.stage .line { margin-top: 10px; font-size: 14px; }
+.stage .line .lbl { display: block; font-size: 12px; color: var(--muted); }
+.stage .line.fix { padding: 8px 10px; background: var(--accent-soft); border-radius: 10px; }
+.stage .more { display: block; margin-top: 10px; font-size: 13px; color: var(--accent); }
+.delta { font-size: 12px; font-family: 'Inter', sans-serif; }
+.delta.up { color: var(--ok); } .delta.down { color: var(--leak); }
+
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-top: 18px; }
+section.card h2 { margin: 0 0 10px; font-size: 17px; }
+.muted { color: var(--muted); }
+.empty { text-align: center; padding: 60px 16px; color: var(--muted); }
+.hyp { border-top: 1px solid var(--line); padding: 10px 0; }
+.hyp:first-of-type { border-top: 0; }
+.hyp .ev { font-size: 13px; color: var(--muted); }
+footer { margin-top: 28px; color: var(--muted); font-size: 13px; text-align: center; }
